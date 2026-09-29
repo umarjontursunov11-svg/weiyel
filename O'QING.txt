@@ -1,0 +1,63 @@
+SAYT VA ADMIN PANEL — YO'RIQNOMA
+================================
+
+1. HOSTINGGA JOYLASH
+--------------------
+Arxivdagi BARCHA fayl va papkalarni hosting "public_html" papkasiga yuklang:
+   index.html      — sayt
+   admin.html      — admin panel
+   site-data.js    — standart matnlar va kontaktlar
+   products.js     — mahsulotlar ro'yxati
+   d/              — texnik xususiyatlar
+   robots.txt, .htaccess (yashirin fayl — "Show hidden files" ni yoqing)
+
+Sayt statik: istalgan hosting ishlaydi (cPanel, Netlify, Vercel, GitHub Pages).
+SSL (https) ni yoqing, keyin .htaccess dagi HTTPS qatorlaridan # ni olib tashlang.
+
+
+2. SUPABASE SOZLAMASI (bir marta, domen ma'lum bo'lgach)
+--------------------------------------------------------
+Parolni tiklash va tasdiqlash xatlaridagi havola admin panelga qaytishi uchun:
+  supabase.com -> loyiha "umarjontursunov11-svg's Project"
+  -> Authentication -> URL Configuration -> Redirect URLs -> "Add URL":
+        https://SIZNING-DOMENINGIZ.uz/admin.html
+Buni qilmasangiz ham tasdiqlash ishlaydi, faqat havola boshqa sahifaga olib boradi —
+shunda admin.html ni qo'lda oching va kiring.
+
+
+3. ADMIN PANELGA BIRINCHI KIRISH
+--------------------------------
+  1) https://SIZNING-DOMENINGIZ.uz/admin.html ni oching
+  2) "Birinchi marta kiryapman" -> umarjontursunov11@gmail.com + yangi parol
+  3) Pochtangizga kelgan xatdagi havolani bosing (email tasdiqlanadi)
+  4) admin.html ga qaytib, email va parol bilan kiring
+
+Faqat "Telegram va adminlar" bo'limidagi ro'yxatda bor emaillar kira oladi.
+Boshqa odam ro'yxatdan o'tsa ham, panelga kira olmaydi.
+
+
+4. ADMIN PANEL IMKONIYATLARI
+----------------------------
+  So'rovlar      — saytdagi formadan kelgan har bir so'rov; holat (yangi / jarayonda /
+                   bajarildi / rad etildi), ichki izoh, o'chirish. Har 60 soniyada yangilanadi.
+  Mahsulotlar    — 12 965 ta mahsulotni qidirish, tahrirlash (nom, CAS, hajm, bo'lim,
+                   narx, rasm, texnik xususiyatlar, qadoq, tarkib), yashirish, yangi qo'shish.
+                   "Asl holiga qaytarish" — Weiyel katalogidagi holatga qaytaradi.
+  Kontaktlar     — telefon, WhatsApp, Telegram, email, manzil, Instagram, Facebook,
+                   dilerlik sertifikati rasmi.
+  Sayt matnlari  — barcha o'zbekcha va ruscha matnlar (192 ta).
+  Telegram       — bot token va chat ID. Yangi so'rov kelganda Telegramga xabar keladi.
+                   Token faqat bazada saqlanadi, sayt kodida ko'rinmaydi.
+  Adminlar       — boshqa admin qo'shish / olib tashlash.
+
+Admin panelda saqlangan har bir o'zgarish saytda darhol (sahifa yangilanganda) ko'rinadi.
+Fayllarni qayta yuklash kerak emas.
+
+
+5. TELEGRAM BOTNI ULASH
+-----------------------
+  1) Telegramda @BotFather -> /newbot -> bot token oling
+  2) Botingizga /start yozing
+  3) @userinfobot ga yozing — u sizning chat ID ingizni aytadi
+     (guruhga kelsin desangiz: botni guruhga qo'shing, guruh ID si -100 bilan boshlanadi)
+  4) Admin panel -> "Telegram va adminlar" -> token va chat ID -> Saqlash -> "Test xabar"
