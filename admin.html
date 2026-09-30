@@ -400,13 +400,16 @@ $('fLogin').onsubmit=async e=>{
 };
 $('fSignup').onsubmit=async e=>{
   e.preventDefault(); say('sMsg');
+  const btn=e.target.querySelector('button[type=submit]'); if(btn.disabled) return; btn.disabled=true;
   const {data,error}=await sb.auth.signUp({email:$('sEmail').value.trim(),password:$('sPass').value,options:{emailRedirectTo:location.href.split('#')[0]}});
-  if(error) return say('sMsg',errText(error));
+  btn.disabled=false;
+  if(error) return say('sMsg',/Database error saving new user/i.test(error.message||'')?'Bu email bilan akkaunt allaqachon yaratilgan. Pochtangizdagi tasdiqlash xatini oching (Spam papkasini ham tekshiring), so‘ng “Kirish” orqali kiring.':errText(error));
   if(data.user&&data.user.identities&&data.user.identities.length===0) return say('sMsg','Bu email allaqachon ro‘yxatdan o‘tgan. “Parolni unutdim”dan foydalaning.');
   say('sMsg','Tasdiqlash xati yuborildi. Pochtangizni oching va havolani bosing, so‘ng shu sahifada kiring.','ok');
 };
 $('fForgot').onsubmit=async e=>{
   e.preventDefault(); say('fMsg');
+  const fb=e.target.querySelector('button[type=submit]'); if(fb.disabled) return; fb.disabled=true; setTimeout(()=>fb.disabled=false,4000);
   const {error}=await sb.auth.resetPasswordForEmail($('fEmail').value.trim(),{redirectTo:location.href.split('#')[0]});
   if(error) return say('fMsg',errText(error));
   say('fMsg','Agar bu email ro‘yxatdan o‘tgan bo‘lsa, havola yuborildi. Pochtangizni tekshiring.','ok');
