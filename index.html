@@ -621,6 +621,8 @@ footer a:hover{color:#fff}
         <li><a href="#bio" data-i="nav_bio"></a></li>
         <li><a href="#about" data-i="nav_about"></a></li>
         <li><a href="#contact" data-i="nav_contact"></a></li>
+        <li><a href="/uz/k/" hreflang="uz">Mahsulotlar ro‘yxati (UZ)</a></li>
+        <li><a href="/ru/k/" hreflang="ru">Каталог продукции (RU)</a></li>
       </ul></div>
       <div><h4 data-i="nav_contact"></h4><ul>
         <li class="d-phones"></li>
@@ -933,7 +935,7 @@ function pdRender(){
       <h3 id="pdTitle">${esc(r[1])}</h3>
       <div class="pd-ids"><span><b>${t.pd_catno}</b>${esc(r[0])}</span>${cas?`<span><b>CAS</b>${esc(cas)}</span>`:''}${r[3]?`<span><b>${t.pc_h[3]}</b>${esc(r[3])}</span>`:''}${r[6]?`<span class="pd-price"><b>${t.pd_price}</b>${esc(r[6])}</span>`:''}</div>
       ${body}
-      <div class="pd-acts"><button type="button" class="btn btn-primary" id="pdAsk">${t.pd_ask}</button><button type="button" class="pc-btn${on?' added':''}" id="pdAdd">${on?t.pc_added:t.pc_add}</button></div>
+      <div class="pd-acts"><button type="button" class="btn btn-primary" id="pdAsk">${t.pd_ask}</button><button type="button" class="pc-btn${on?' added':''}" id="pdAdd">${on?t.pc_added:t.pc_add}</button><a class="pc-more-btn" style="align-self:center" href="/${lang}/p/${pdSlug(r)}.html">${t.pd_page}</a></div>
     </div>
   </div>`;
 }
@@ -973,6 +975,17 @@ function applyProducts(){
 sbGet('sm_settings?select=key,value').then(x=>{ SBO.settings=x; applySettings(); });
 sbGet('sm_products?select=catno,data').then(x=>{ SBO.products=x||[]; applyProducts(); });
 window.addEventListener('wy-loaded',applyProducts);
+
+/* same slug rule as build_pages.py: "<catno> <name>" -> lower-case, a-z0-9 joined by "-", max 90 */
+function pdSlug(r){ const s=(r[0]+' '+String(r[1]).replace(/<\/?sub>/g,'')).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); return s.slice(0,90).replace(/-+$/,'')||r[0].toLowerCase().replace(/[^a-z0-9]+/g,'-'); }
+
+/* ?add=<catno> (from product pages): put the product into the request form */
+(function(){
+  let want=null; try{ want=new URLSearchParams(location.search).get('add'); }catch(e){}
+  if(!want) return;
+  const go=()=>{ if(!pcReady()||PC.picked.has(want)) return; if(pdRowIdx(want)===undefined) return; pcToggle(want); try{ history.replaceState(null,'',location.pathname+'#contact'); }catch(e){} setTimeout(()=>$('contact').scrollIntoView(),500); };
+  if(pcReady()) go(); else window.addEventListener('wy-loaded',()=>setTimeout(go,0));
+})();
 
 render();
 route();
