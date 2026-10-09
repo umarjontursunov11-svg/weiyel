@@ -20,8 +20,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(ROOT, "public")
 SB_URL = "https://fwuqtrfoenejodufnwyb.supabase.co"
 SB_KEY = "sb_publishable_5nsgpaWXtJYY1gNY7jzDCA_KRJclQjr"
-PROD = os.environ.get("VERCEL_PROJECT_PRODUCTION_URL") or "weiyel-uz.vercel.app"
-BASE = os.environ.get("SITE_URL", "https://" + PROD).rstrip("/")
+BASE = os.environ.get("SITE_URL", "https://weiyel.uz").rstrip("/")  # canonical domain for sitemaps and links
 TODAY = date.today().isoformat()
 PER_PAGE = 120  # products per category page
 
