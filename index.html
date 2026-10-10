@@ -814,7 +814,7 @@ function pcFilter(){
     if(row.h) continue;
     const k=WY.subs[row[4]];
     if(PC.sub){ if(k!==PC.sub) continue; } else if(PC.main && k.split('_')[0]!==PC.main) continue;
-    if(q && !(row.s||(row.s=(row[0]+' '+row[1]+' '+row[2]).toLowerCase())).includes(q)) continue;
+    if(q && !(row.s||(row.s=(row[0]+' '+row[1]+' '+row[2]+' '+((WY.ru&&WY.ru[row[0]])||'')).toLowerCase())).includes(q)) continue;
     r.push(row);
   }
   return r;
@@ -826,7 +826,7 @@ function pcRender(){
   const head=`<div class="pc-row pc-head"><span></span><span>${h[0]}</span><span>${h[1]}</span><span>${h[2]}</span><span>${h[3]}</span><span></span></div>`;
   const body=list.slice(0,PC.limit).map(r=>{
     const on=PC.picked.has(r[0]);
-    return `<div class="pc-row" data-no="${esc(r[0])}"><span class="pc-th">${pcThumb(r)}</span><span class="pc-no">${esc(r[0])}</span><span class="pc-name"><b>${esc(r[1])}</b><small>${esc(WY.names[WY.subs[r[4]]][li])}</small></span><span class="pc-cas">${r[2]&&r[2]!=='/'?'<span class="lbl-mob">CAS: </span>'+esc(r[2]):''}</span><span class="pc-spec">${r[3]?'<span class="lbl-mob">'+h[3]+': </span>'+esc(r[3]):''}${r[6]?'<em class="pc-price">'+esc(r[6])+'</em>':''}</span><span class="pc-acts"><button type="button" class="pc-btn${on?' added':''}" data-no="${esc(r[0])}">${on?t.pc_added:t.pc_add}</button><button type="button" class="pc-more-btn">${t.pc_details}</button></span></div>`;
+    return `<div class="pc-row" data-no="${esc(r[0])}"><span class="pc-th">${pcThumb(r)}</span><span class="pc-no">${esc(r[0])}</span><span class="pc-name"><b>${esc(pName(r))}</b><small>${pAlt(r)?esc(pAlt(r))+' · ':''}${esc(WY.names[WY.subs[r[4]]][li])}</small></span><span class="pc-cas">${r[2]&&r[2]!=='/'?'<span class="lbl-mob">CAS: </span>'+esc(r[2]):''}</span><span class="pc-spec">${r[3]?'<span class="lbl-mob">'+h[3]+': </span>'+esc(r[3]):''}${r[6]?'<em class="pc-price">'+esc(r[6])+'</em>':''}</span><span class="pc-acts"><button type="button" class="pc-btn${on?' added':''}" data-no="${esc(r[0])}">${on?t.pc_added:t.pc_add}</button><button type="button" class="pc-more-btn">${t.pc_details}</button></span></div>`;
   }).join('');
   $('pcList').innerHTML=list.length?head+body:`<div class="pc-empty">${PC.main&&!PC.q.trim()?t.pc_order:t.pc_none}<br><br><a href="#contact" class="btn btn-primary">${t.hero_btn2}</a></div>`;
   $('pcMore').hidden=list.length<=PC.limit;
@@ -866,6 +866,10 @@ function pcToggle(no){
   pcRender(); pcCartUpd(); if(PD.no===no) pdRender();
 }
 window.addEventListener('wy-loaded',pcLang);
+
+/* product name in the current language: Russian name (from the Weiyel price list) on the RU site */
+function pName(r){ return (lang==='ru'&&WY.ru&&WY.ru[r[0]])||r[1]; }
+function pAlt(r){ return (lang==='ru'&&WY.ru&&WY.ru[r[0]])?r[1]:''; }
 
 /* ---------- PRODUCT DETAIL ---------- */
 const IMG=u=>!u?'':(u.startsWith('http')?u:(WY.ip[u[0]]||'')+u.slice(1));
@@ -934,7 +938,7 @@ function pdRender(){
     </div>
     <div>
       <div class="pd-cat">${esc(mainName)} · ${esc(WY.names[WY.subs[r[4]]][li])}</div>
-      <h3 id="pdTitle">${esc(r[1])}</h3>
+      <h3 id="pdTitle">${esc(pName(r))}</h3>${pAlt(r)?`<div style="color:var(--muted);font-weight:600;margin:-8px 0 14px">${esc(pAlt(r))}</div>`:''}
       <div class="pd-ids"><span><b>${t.pd_catno}</b>${esc(r[0])}</span>${cas?`<span><b>CAS</b>${esc(cas)}</span>`:''}${r[3]?`<span><b>${t.pc_h[3]}</b>${esc(r[3])}</span>`:''}${r[6]?`<span class="pd-price"><b>${t.pd_price}</b>${esc(r[6])}</span>`:''}</div>
       ${body}
       <div class="pd-acts"><button type="button" class="btn btn-primary" id="pdAsk">${t.pd_ask}</button><button type="button" class="pc-btn${on?' added':''}" id="pdAdd">${on?t.pc_added:t.pc_add}</button><a class="pc-more-btn" style="align-self:center" href="/${lang}/p/${pdSlug(r)}.html">${t.pd_page}</a></div>

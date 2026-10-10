@@ -276,16 +276,17 @@ dl.kv dd{overflow-wrap:anywhere}
 
     <!-- PRODUCTS -->
     <section data-pane="products" hidden>
-      <div class="top"><div><h2>Mahsulotlar</h2><p>Katalogdagi <b id="pTotal">…</b> ta mahsulot. O‘zgartirilgan, qo‘shilgan va yashirilganlari saytda darhol ko‘rinadi.</p></div><button class="btn btn-p" type="button" id="pNew">+ Yangi mahsulot</button></div>
+      <div class="top"><div><h2>Mahsulotlar</h2><p>Katalogdagi <b id="pTotal">…</b> ta mahsulot. O‘zgartirilgan, qo‘shilgan va yashirilganlari saytda darhol ko‘rinadi.</p></div><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" type="button" id="xlBtn">⬆ Excel'dan narx yuklash</button><button class="btn btn-p" type="button" id="pNew">+ Yangi mahsulot</button></div><input type="file" id="xlFile" accept=".xlsx,.xls,.csv" hidden></div>
+      <div class="card pad stack" id="xlBox" hidden style="margin-bottom:14px"></div>
       <div class="card">
         <div class="pad" style="padding-bottom:0"><div class="tools">
           <input class="grow" id="pQ" type="search" placeholder="Nomi, katalog № yoki CAS">
           <select id="pMain" style="width:auto"></select>
           <select id="pState" style="width:auto">
-            <option value="">Hammasi</option><option value="edit">O‘zgartirilganlar</option><option value="added">Qo‘shilganlar</option><option value="hidden">Yashirilganlar</option><option value="price">Narxi borlar</option>
+            <option value="">Hammasi</option><option value="edit">O‘zgartirilganlar</option><option value="added">Qo‘shilganlar</option><option value="hidden">Yashirilganlar</option><option value="price">Sotuv narxi borlar</option><option value="wprice">Weiyel narxi borlar</option><option value="nowprice">Weiyel narxi yo‘qlar</option>
           </select>
         </div></div>
-        <div class="tw"><table class="t"><thead><tr><th></th><th>Katalog №</th><th>Nomi</th><th>CAS</th><th>Hajmi</th><th>Narxi</th><th>Holat</th></tr></thead><tbody id="pBody"><tr><td colspan="7" class="empty">Katalog yuklanmoqda…</td></tr></tbody></table></div>
+        <div class="tw"><table class="t"><thead><tr><th></th><th>Katalog №</th><th>Nomi</th><th>CAS</th><th>Hajmi</th><th>Weiyel $</th><th>Sotuv narxi</th><th>Holat</th></tr></thead><tbody id="pBody"><tr><td colspan="8" class="empty">Katalog yuklanmoqda…</td></tr></tbody></table></div>
         <div class="more"><button class="btn" type="button" id="pMore" hidden>Yana ko‘rsatish</button></div>
       </div>
     </section>
@@ -714,7 +715,19 @@ async function loadOverrides(){
   const {data,error}=await sb.from('sm_products').select('catno,data,updated_at');
   if(error) return toast('Mahsulot o‘zgarishlarini yuklab bo‘lmadi',true);
   OV={}; (data||[]).forEach(r=>OV[r.catno]=r.data||{});
+  await loadPrices();
 }
+let WP={};
+async function loadPrices(){
+  WP={}; let from=0;
+  for(;;){
+    const {data,error}=await sb.from('sm_prices').select('catno,price_usd').range(from,from+999);
+    if(error){ toast('Weiyel narxlarini yuklab bo‘lmadi',true); return; }
+    (data||[]).forEach(r=>WP[r.catno]=r.price_usd);
+    if(!data||data.length<1000) break; from+=1000;
+  }
+}
+const usd=v=>v==null||v===''?'':'$'+Number(v).toLocaleString('en-US',{maximumFractionDigits:2});
 function baseRow(no){ const i=WY.idx[no]; return i===undefined?null:WY.rows[i]; }
 function view(no){
   const b=baseRow(no), o=OV[no]||{};
@@ -725,13 +738,15 @@ function view(no){
 function pList(){
   const q=$('pQ').value.trim().toLowerCase(), m=$('pMain').value, st=$('pState').value;
   const added=Object.keys(OV).filter(no=>!baseRow(no));
-  const nos=st&&st!=='price'&&st!=='hidden'&&st!=='edit'?added:[...added,...WY.rows.map(r=>r[0])];
+  const nos=st==='added'?added:[...added,...WY.rows.map(r=>r[0])];
   const out=[];
   for(const no of nos){
     const o=OV[no];
     if(st==='edit'&&!(o&&baseRow(no)&&Object.keys(o).some(k=>!['hidden','price'].includes(k)))) continue;
     if(st==='hidden'&&!(o&&o.hidden)) continue;
     if(st==='price'&&!(o&&o.price)) continue;
+    if(st==='wprice'&&WP[no]==null) continue;
+    if(st==='nowprice'&&WP[no]!=null) continue;
     if(m||q){ const v=view(no); if(m&&mainOf(v.sub)!==m) continue; if(q&&!(v.no+' '+v.name+' '+v.cas).toLowerCase().includes(q)) continue; }
     out.push(no);
   }
@@ -744,8 +759,8 @@ function pRender(){
   $('pBody').innerHTML=list.length?list.slice(0,pLimit).map(no=>{
     const v=view(no);
     const pills=[v.added?'<span class="pill p-added">Qo‘shilgan</span>':'',v.edited?'<span class="pill p-edit">O‘zgartirilgan</span>':'',v.hidden?'<span class="pill p-hidden">Yashirilgan</span>':''].join(' ');
-    return `<tr class="click" data-no="${esc(no)}"><td>${v.img?`<img class="th" src="${esc(v.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'th ph',textContent:'—'}))">`:'<span class="th ph">—</span>'}</td><td class="mono">${esc(no)}</td><td><b>${esc(v.name)}</b><span class="sm">${esc((WY.names[v.sub]||[''])[0])}</span></td><td class="num">${esc(v.cas||'—')}</td><td class="num">${esc(v.spec||'—')}</td><td class="num"><b>${esc(v.price||'')}</b></td><td>${pills}</td></tr>`;
-  }).join(''):'<tr><td colspan="7" class="empty">Hech narsa topilmadi.</td></tr>';
+    return `<tr class="click" data-no="${esc(no)}"><td>${v.img?`<img class="th" src="${esc(v.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'th ph',textContent:'—'}))">`:'<span class="th ph">—</span>'}</td><td class="mono">${esc(no)}</td><td><b>${esc(v.name)}</b><span class="sm">${esc((WY.names[v.sub]||[''])[0])}</span></td><td class="num">${esc(v.cas||'—')}</td><td class="num">${esc(v.spec||'—')}</td><td class="num" style="color:var(--muted)">${esc(usd(WP[no]))}</td><td class="num"><b>${esc(v.price||'')}</b></td><td>${pills}</td></tr>`;
+  }).join(''):'<tr><td colspan="8" class="empty">Hech narsa topilmadi.</td></tr>';
   $('pMore').hidden=list.length<=pLimit;
 }
 let pT; $('pQ').oninput=()=>{ clearTimeout(pT); pT=setTimeout(()=>{ pLimit=50; pRender(); },200); };
@@ -772,7 +787,7 @@ async function pOpen(no){
     <datalist id="kkeys">${KNOWN_KEYS.map(k=>`<option value="${k}">${esc(labels[k]||'')}</option>`).join('')}</datalist>
     <div class="row2">
       <label class="f">Katalog № ${isNew?'<span class="h">takrorlanmas</span>':''}<input id="eNo" class="mono" value="${esc(v.no)}" ${isNew?'required':'readonly'}></label>
-      <label class="f">Narxi <span class="h">bo‘sh qolsa, “Narx so‘rash”</span><input id="ePrice" value="${esc(v.price)}" placeholder="masalan: 450 000 so‘m"></label>
+      <label class="f">Sotuv narxi (saytda ko‘rinadi) <span class="h">bo‘sh qolsa, “Narx so‘rash”${WP[v.no]!=null?` · Weiyel narxi: <b style="color:var(--ink)">${esc(usd(WP[v.no]))}</b> (faqat adminlar ko‘radi)`:''}</span><input id="ePrice" value="${esc(v.price)}" placeholder="masalan: 450 000 so‘m"></label>
     </div>
     <label class="f">Nomi<input id="eName" value="${esc(v.name)}" required></label>
     <div class="row3">
@@ -854,6 +869,67 @@ async function pOpen(no){
     if(error) return toast(errText(error),true);
     pRender(); drClose(); toast('Saqlandi — saytda yangilandi');
   };
+}
+
+/* ================= EXCEL PRICE IMPORT ================= */
+let XL=null;
+function loadXlsxLib(){
+  return window.XLSX?Promise.resolve():new Promise((res,rej)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'; s.onload=res; s.onerror=()=>rej(new Error('Excel kutubxonasini yuklab bo‘lmadi. Internetni tekshiring.')); document.head.appendChild(s); });
+}
+/* every sheet: find the header row with a product-code column and a price column */
+function parseWorkbook(wb){
+  const out=new Map(); let sheets=0;
+  for(const name of wb.SheetNames){
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[name],{header:1,raw:true,defval:''});
+    let hi=-1,ci=-1,pi=-1;
+    for(let i=0;i<Math.min(rows.length,15)&&hi<0;i++){
+      const r=rows[i].map(x=>String(x).toLowerCase());
+      const c=r.findIndex(x=>/product code|cat\.? ?no|артикул|код|katalog/.test(x)), p=r.findIndex(x=>/price|цена|narx/.test(x));
+      if(c>=0&&p>=0){ hi=i; ci=c; pi=p; }
+    }
+    if(hi<0) continue; sheets++;
+    for(const r of rows.slice(hi+1)){
+      const no=String(r[ci]||'').trim(), pr=parseFloat(String(r[pi]).replace(/[^\d.,]/g,'').replace(',','.'));
+      if(no&&isFinite(pr)&&!out.has(no)) out.set(no,Math.round(pr*100)/100);
+    }
+  }
+  return {map:out,sheets};
+}
+$('xlBtn').onclick=()=>{ if(!catReady) return toast('Katalog hali yuklanmoqda',true); $('xlFile').value=''; $('xlFile').click(); };
+$('xlFile').onchange=async()=>{
+  const f=$('xlFile').files[0]; if(!f) return;
+  const box=$('xlBox'); box.hidden=false; box.innerHTML='<div class="msg info">Fayl o‘qilmoqda…</div>';
+  try{
+    await loadXlsxLib();
+    const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});
+    const {map,sheets}=parseWorkbook(wb);
+    if(!map.size) throw new Error('Faylda “Product Code” va narx ustunlari topilmadi.');
+    const all=[...map], inCat=all.filter(([no])=>baseRow(no)||OV[no]).length;
+    const changed=all.filter(([no,p])=>WP[no]!==p).length;
+    XL={rows:all,file:f.name};
+    box.innerHTML=`<div class="sec">Excel: ${esc(f.name)}</div>
+      <dl class="kv"><dt>Varaqlar</dt><dd>${sheets}</dd><dt>Narxli mahsulotlar</dt><dd><b>${all.length.toLocaleString('ru-RU')}</b></dd>
+      <dt>Katalogda borlari</dt><dd>${inCat.toLocaleString('ru-RU')}</dd><dt>Yangi yoki o‘zgargan narx</dt><dd><b>${changed.toLocaleString('ru-RU')}</b></dd></dl>
+      <div class="msg info">Narxlar faqat admin panelda saqlanadi (“Weiyel $” ustuni). Saytdagi tashrifchilar ularni ko‘rmaydi.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn btn-p" type="button" id="xlGo"${changed?'':' disabled'}>Narxlarni saqlash (${changed.toLocaleString('ru-RU')})</button><button class="btn" type="button" id="xlCancel">Bekor qilish</button></div>
+      <div id="xlProg"></div>`;
+    $('xlCancel').onclick=()=>{ box.hidden=true; XL=null; };
+    $('xlGo').onclick=xlSave;
+  }catch(e){ box.innerHTML=`<div class="msg err">${esc(errText(e))}</div>`; }
+};
+async function xlSave(){
+  const rows=XL.rows.filter(([no,p])=>WP[no]!==p), src=XL.file.slice(0,200);
+  $('xlGo').disabled=true; $('xlCancel').disabled=true;
+  let done=0;
+  for(let i=0;i<rows.length;i+=500){
+    const batch=rows.slice(i,i+500).map(([catno,price_usd])=>({catno,price_usd,source:src}));
+    const {error}=await sb.from('sm_prices').upsert(batch);
+    if(error){ $('xlProg').innerHTML=`<div class="msg err">Xato: ${esc(errText(error))}. ${done} ta saqlandi, qolganini qayta urinib ko‘ring.</div>`; $('xlGo').disabled=false; $('xlCancel').disabled=false; return; }
+    batch.forEach(b=>WP[b.catno]=b.price_usd); done+=batch.length;
+    $('xlProg').innerHTML=`<div class="msg info">Saqlanmoqda… ${done.toLocaleString('ru-RU')} / ${rows.length.toLocaleString('ru-RU')}</div>`;
+  }
+  $('xlProg').innerHTML=`<div class="msg ok">Tayyor: ${done.toLocaleString('ru-RU')} ta narx saqlandi.</div>`;
+  $('xlCancel').disabled=false; $('xlCancel').textContent='Yopish'; pRender(); toast('Weiyel narxlari saqlandi');
 }
 
 /* ================= START ================= */

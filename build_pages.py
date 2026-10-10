@@ -34,6 +34,7 @@ def load_js_json(path, prefix):
 
 WY = load_js_json(os.path.join(ROOT, "products.js"), "window.WY=")
 ROWS, SUBS, NAMES, IP, CS = WY["rows"], WY["subs"], WY["names"], WY["ip"], WY["cs"]
+RU = WY.get("ru") or {}  # Russian names from the Weiyel price list
 DET = {}
 for k in range((len(ROWS) + CS - 1) // CS):
     p = os.path.join(ROOT, "d", f"{k}.js")
@@ -161,6 +162,7 @@ STD_EN = "Store airtight and away from light place."
 def e(s): return html.escape(str(s or ""), quote=True)
 def sub_html(s): return re.sub(r"&lt;(/?)sub&gt;", r"<\1sub>", e(s))
 def plain(s): return re.sub(r"</?sub>", "", str(s or ""))
+def dname(p, lang): return RU.get(p["no"]) if lang == "ru" and RU.get(p["no"]) else plain(p["name"])
 
 def tv(T, k, v):
     if v in T["v"]: return e(T["v"][v])
@@ -317,7 +319,7 @@ if(d.name)document.querySelector('h1').textContent=d.name;}).catch(function(){})
 def product_page(p, lang):
     T = L[lang]; o = T["other"]; det = p["det"] or {}
     m = main_of(p["sub"]); sn = sub_name(p["sub"], T); mn = main_name(m, T)
-    name = plain(p["name"])
+    name = dname(p, lang); en_name = plain(p["name"]) if name != plain(p["name"]) else ""
     cas_ok = bool(re.match(r"^\d+-\d+-\d$", p["cas"] or ""))
     title = f"{name} ({p['no']}){', CAS ' + p['cas'] if cas_ok else ''} — {T['t_suffix']}"
     desc = T["d_tpl"].format(name=name, cas=f" (CAS {p['cas']})" if cas_ok else "",
@@ -344,7 +346,7 @@ def product_page(p, lang):
     rel_html = ""
     if rel:
         rel_html = f'<h2 style="margin-top:34px">{e(T["related"])}</h2><div class="rel">' + "".join(
-            f'<a href="{url_p(lang, x)}">{e(plain(x["name"]))}<small>{e(x["no"])}</small></a>' for x in rel) + "</div>"
+            f'<a href="{url_p(lang, x)}">{e(dname(x, lang))}<small>{e(x["no"])}</small></a>' for x in rel) + "</div>"
     ask = f'/index.html?add={urllib.request.quote(p["no"])}#contact'
     wa = f'https://wa.me/{digits(DEALER.get("whatsapp",""))}?text=' + urllib.request.quote(f'{T["ask"]}: {p["no"]} — {name}') if DEALER.get("whatsapp") else ""
     body = f"""<article class="card pg" itemscope itemtype="https://schema.org/Product">
@@ -354,7 +356,7 @@ def product_page(p, lang):
   </div>
   <div>
     <div class="cat"><a href="{url_main(lang, m)}">{e(mn)}</a> · <a href="{url_sub(lang, p['sub'])}">{e(sn)}</a></div>
-    <h1 itemprop="name">{e(name)}</h1>
+    <h1 itemprop="name">{e(name)}</h1>{f'<p class="lead" style="margin:-4px 0 12px">{e(en_name)}</p>' if en_name else ''}
     <div class="ids"><span><b>{e(T['catno'])}</b><span itemprop="sku" style="all:unset">{e(p['no'])}</span></span>{f'<span><b>CAS</b>{e(p["cas"])}</span>' if p['cas'] else ''}{f'<span><b>{e(T["volume"])}</b>{e(p["spec"])}</span>' if p['spec'] else ''}<span class="pr" id="pr"{'' if p['price'] else ' hidden'}><b>{e(T['price'])}</b><i style="font-style:normal">{e(p['price'])}</i></span></div>
     <meta itemprop="brand" content="Weiyel">
     <div class="warn" id="hid" hidden>{e(T['hidden'])}</div>
@@ -364,7 +366,7 @@ def product_page(p, lang):
 </article>
 {rel_html}
 """
-    ld = {"@context": "https://schema.org", "@type": "Product", "name": name, "sku": p["no"], "mpn": p["no"],
+    ld = {"@context": "https://schema.org", "@type": "Product", "name": name, **({"alternateName": en_name} if en_name else {}), "sku": p["no"], "mpn": p["no"],
           "brand": {"@type": "Brand", "name": "Weiyel"}, "category": f"{mn} / {sn}", "description": desc,
           "url": BASE + url_p(lang, p)}
     if main_img: ld["image"] = main_img
@@ -387,7 +389,7 @@ def sub_pages(k, lang):
                 f'<span class="on">{n}</span>' if n == pg else f'<a href="{url_sub(lang, k, n)}">{n}</a>' for n in range(1, pages + 1)) + (
                 f'<a href="{url_sub(lang, k, pg + 1)}">{e(T["next"])}</a>' if pg < pages else "") + "</nav>"
         body = (f'<h1>{e(sn)}</h1><p class="lead">{e(mn)} · {len(items)} {e(T["products"])}. {e(T["cert"])}.</p>'
-                f'<div class="lst">' + "".join(f'<a href="{url_p(lang, x)}">{e(plain(x["name"]))}<small>{e(x["no"])}{" · CAS " + e(x["cas"]) if x["cas"] else ""}{" · " + e(x["spec"]) if x["spec"] else ""}</small></a>' for x in chunk) + "</div>" + pager)
+                f'<div class="lst">' + "".join(f'<a href="{url_p(lang, x)}">{e(dname(x, lang))}<small>{e(x["no"])}{" · CAS " + e(x["cas"]) if x["cas"] else ""}{" · " + e(x["spec"]) if x["spec"] else ""}</small></a>' for x in chunk) + "</div>" + pager)
         crumbs = [(T["home"], "/"), (T["catalog"], f"/{lang}/k/"), (mn, url_main(lang, m)), (sn, None)]
         out.append((url_sub(lang, k, pg), page(lang, title, desc, url_sub(lang, k, pg), url_sub(o, k, pg), body, None, crumbs)))
     return out
