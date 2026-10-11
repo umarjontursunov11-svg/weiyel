@@ -878,9 +878,12 @@ function pAlt(r){ return (lang==='ru'&&WY.ru&&WY.ru[r[0]])?r[1]:''; }
 
 /* ---------- PRODUCT DETAIL ---------- */
 const IMG=u=>!u?'':(u.startsWith('http')?u:(WY.ip[u[0]]||'')+u.slice(1));
-const MOL=cas=>'https://weiyeglobal.oss-accelerate.aliyuncs.com/molecularPng/'+encodeURIComponent(cas)+'.png';
+/* images live on our own site (/img/...): photos p/ (480px) + t/ (thumb), molecules m/ + mt/ (thumb) */
+let MOLS=null; const hasMol=cas=>{ if(!MOLS) MOLS=new Set(String(WY.mol||'').split(' ')); return !!cas&&MOLS.has(cas); };
+const MOL=cas=>hasMol(cas)?'/img/m/'+cas+'.webp':'';
+const THUMB=u=>u.replace('/img/p/','/img/t/');
 const FLASK='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M9 3h6M10 3v6L4.5 18.5A2 2 0 0 0 6.2 21.5h11.6a2 2 0 0 0 1.7-3L14 9V3"/><path d="M7 15h10"/></svg>';
-function pcThumb(r){ const u=IMG(r[5])||(/^\d+-\d+-\d$/.test(r[2])?MOL(r[2]):''); return u?`<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createRange().createContextualFragment(FLASK))">`:FLASK; }
+function pcThumb(r){ const u=IMG(r[5])?THUMB(IMG(r[5])):(hasMol(r[2])?'/img/mt/'+r[2]+'.webp':''); return u?`<img src="${esc(u)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(document.createRange().createContextualFragment(FLASK))">`:FLASK; }
 const sub=v=>esc(v).replace(/&lt;(\/?)sub&gt;/g,'<$1sub>');
 const PD={no:null,chunks:{}};
 /* translate common spec values; anything unknown stays as on weiyel.com */
@@ -923,7 +926,7 @@ addEventListener('keydown',e=>{ if(e.key==='Escape'&&PD.no) pdClose(); });
 function pdRender(){
   if(!PD.no) return;
   const t=T[lang], li=lang==='uz'?0:1, r=WY.rows[pdRowIdx(PD.no)], k=pdChunk(PD.no), ch=PD.chunks[k], d=(PD.over&&PD.over[r[0]])||(ch?ch[r[0]]:null), on=PC.picked.has(r[0]);
-  const cas=r[2], casOk=/^\d+-\d+-\d$/.test(cas), photo=IMG(r[5])||(casOk?MOL(cas):''), showMol=casOk&&!!IMG(r[5]);
+  const cas=r[2], photo=IMG(r[5])||MOL(cas), showMol=!!MOL(cas)&&!!IMG(r[5]);
   const mainName=pcMainName(WY.subs[r[4]].split('_')[0]);
   let body;
   if(ch===undefined&&!(PD.over&&PD.over[r[0]])){ body='<div class="pd-load"><i style="width:60%"></i><i></i><i style="width:80%"></i><i style="width:70%"></i></div>'; }

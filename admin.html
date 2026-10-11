@@ -698,6 +698,7 @@ function chunk(k){
   });
 }
 const IMG=u=>!u?'':(u.startsWith('http')?u:(WY.ip[u[0]]||'')+u.slice(1));
+const THUMB=u=>String(u||'').replace('/img/p/','/img/t/');
 const MAINS=()=>[...T.uz.cats.map((c,i)=>[String(i+1),c[2]]),['9',T.uz.bio_title]];
 function mainOf(sub){ return String(sub||'').split('_')[0]; }
 async function loadCatalog(){
@@ -744,7 +745,7 @@ function pRender(){
   $('pBody').innerHTML=list.length?list.slice(0,pLimit).map(no=>{
     const v=view(no);
     const pills=[v.added?'<span class="pill p-added">Qo‘shilgan</span>':'',v.edited?'<span class="pill p-edit">O‘zgartirilgan</span>':'',v.hidden?'<span class="pill p-hidden">Yashirilgan</span>':''].join(' ');
-    return `<tr class="click" data-no="${esc(no)}"><td>${v.img?`<img class="th" src="${esc(v.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'th ph',textContent:'—'}))">`:'<span class="th ph">—</span>'}</td><td class="mono">${esc(no)}</td><td><b>${esc(v.name)}</b><span class="sm">${esc((WY.names[v.sub]||[''])[0])}</span></td><td class="num">${esc(v.cas||'—')}</td><td class="num">${esc(v.spec||'—')}</td><td class="num"><b>${esc(v.price||'')}</b></td><td>${pills}</td></tr>`;
+    return `<tr class="click" data-no="${esc(no)}"><td>${v.img?`<img class="th" src="${esc(THUMB(v.img))}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'th ph',textContent:'—'}))">`:'<span class="th ph">—</span>'}</td><td class="mono">${esc(no)}</td><td><b>${esc(v.name)}</b><span class="sm">${esc((WY.names[v.sub]||[''])[0])}</span></td><td class="num">${esc(v.cas||'—')}</td><td class="num">${esc(v.spec||'—')}</td><td class="num"><b>${esc(v.price||'')}</b></td><td>${pills}</td></tr>`;
   }).join(''):'<tr><td colspan="7" class="empty">Hech narsa topilmadi.</td></tr>';
   $('pMore').hidden=list.length<=pLimit;
 }

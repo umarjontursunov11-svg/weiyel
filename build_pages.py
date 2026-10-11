@@ -36,6 +36,7 @@ def load_js_json(path, prefix):
 WY = load_js_json(os.path.join(ROOT, "products.js"), "window.WY=")
 ROWS, SUBS, NAMES, IP, CS = WY["rows"], WY["subs"], WY["names"], WY["ip"], WY["cs"]
 RU = WY.get("ru") or {}  # Russian names from the Weiyel price list
+MOLS = set(str(WY.get("mol") or "").split())  # CAS numbers with a local molecule image
 DET = {}
 for k in range((len(ROWS) + CS - 1) // CS):
     p = os.path.join(ROOT, "d", f"{k}.js")
@@ -66,6 +67,8 @@ DEALER = {
 }
 if isinstance(SETTINGS.get("dealer"), dict):
     DEALER.update({k: v for k, v in SETTINGS["dealer"].items() if v not in (None, "")})
+
+def absu(u): return BASE + u if u.startswith("/") else u
 
 def img_url(code):
     if not code: return ""
@@ -313,7 +316,7 @@ def page(lang, title, desc, path, alt_path, body, jsonld=None, crumbs=None, extr
 
 # shared by every product page (/assets/p.js): applies admin-panel price / hidden / name edits
 LIVE_JS = """(function(){var no=document.body.getAttribute('data-no');
-document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('.acts a');if(!a||!window.gtag)return;var t=a.classList.contains('p')?'request_price':(/wa\.me/.test(a.href)?'contact_whatsapp':'contact_telegram');gtag('event',t,{item_id:no,place:'product_page',language:document.documentElement.lang});});
+document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('.acts a');if(!a||!window.gtag)return;var t=a.classList.contains('p')?'request_price':(/wa\\.me/.test(a.href)?'contact_whatsapp':'contact_telegram');gtag('event',t,{item_id:no,place:'product_page',language:document.documentElement.lang});});
 if(!no||!window.fetch)return;
 fetch('%s/rest/v1/sm_products?select=data&catno=eq.'+encodeURIComponent(no),{headers:{apikey:'%s',Authorization:'Bearer %s'}}).then(function(r){return r.ok?r.json():[]}).then(function(a){var d=a&&a[0]&&a[0].data;if(!d)return;
 if(d.hidden)document.getElementById('hid').hidden=false;
@@ -330,7 +333,7 @@ def product_page(p, lang):
     desc = T["d_tpl"].format(name=name, cas=f" (CAS {p['cas']})" if cas_ok else "",
                              spec=(f"{T['volume']}: {p['spec']}. " if p["spec"] else "")).strip()[:300]
     photo = p["img"] or ""
-    mol = f"https://weiyeglobal.oss-accelerate.aliyuncs.com/molecularPng/{p['cas']}.png" if cas_ok else ""
+    mol = f"/img/m/{p['cas']}.webp" if p["cas"] in MOLS else ""
     main_img = photo or mol
     rows = [(k, v) for k, v in (det.get("b") or []) if v and v != "/" and k not in ("number", "Sharing mode")]
     spec = ""
@@ -374,11 +377,11 @@ def product_page(p, lang):
     ld = {"@context": "https://schema.org", "@type": "Product", "name": name, **({"alternateName": en_name} if en_name else {}), "sku": p["no"], "mpn": p["no"],
           "brand": {"@type": "Brand", "name": "Weiyel"}, "category": f"{mn} / {sn}", "description": desc,
           "url": BASE + url_p(lang, p)}
-    if main_img: ld["image"] = main_img
+    if main_img: ld["image"] = absu(main_img)
     if cas_ok: ld["additionalProperty"] = [{"@type": "PropertyValue", "name": "CAS", "value": p["cas"]}]
     crumbs = [(T["home"], "/"), (T["catalog"], f"/{lang}/k/"), (mn, url_main(lang, m)), (sn, url_sub(lang, p["sub"])), (name, None)]
     return page(lang, title, desc, url_p(lang, p), url_p(o, p), body, [ld], crumbs,
-                extra_head=f'<meta property="og:image" content="{e(main_img)}">\n' if main_img else "", no=p["no"])
+                extra_head=f'<meta property="og:image" content="{e(absu(main_img))}">\n' if main_img else "", no=p["no"])
 
 def sub_pages(k, lang):
     T = L[lang]; o = T["other"]; items = BY_SUB[k]; m = main_of(k)
