@@ -18,6 +18,7 @@ from datetime import date
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(ROOT, "public")
+GA_ID = "G-3JY7CQC2P0"  # Google Analytics 4
 SB_URL = "https://fwuqtrfoenejodufnwyb.supabase.co"
 SB_KEY = "sb_publishable_5nsgpaWXtJYY1gNY7jzDCA_KRJclQjr"
 BASE = os.environ.get("SITE_URL", "https://weiyel.uz").rstrip("/")  # canonical domain for sitemaps and links
@@ -284,6 +285,8 @@ def page(lang, title, desc, path, alt_path, body, jsonld=None, crumbs=None, extr
 {extra_head}<meta name="theme-color" content="#0b1626">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="stylesheet" href="/assets/p.css">
+<script async src="https://www.googletagmanager.com/gtag/js?id={GA_ID}"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){{dataLayer.push(arguments);}}gtag('js',new Date());gtag('config','{GA_ID}');</script>
 {ld}
 </head>
 <body{f' data-no="{e(no)}"' if no else ''}>
@@ -309,7 +312,9 @@ def page(lang, title, desc, path, alt_path, body, jsonld=None, crumbs=None, extr
 """
 
 # shared by every product page (/assets/p.js): applies admin-panel price / hidden / name edits
-LIVE_JS = """(function(){var no=document.body.getAttribute('data-no');if(!no||!window.fetch)return;
+LIVE_JS = """(function(){var no=document.body.getAttribute('data-no');
+document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('.acts a');if(!a||!window.gtag)return;var t=a.classList.contains('p')?'request_price':(/wa\.me/.test(a.href)?'contact_whatsapp':'contact_telegram');gtag('event',t,{item_id:no,place:'product_page',language:document.documentElement.lang});});
+if(!no||!window.fetch)return;
 fetch('%s/rest/v1/sm_products?select=data&catno=eq.'+encodeURIComponent(no),{headers:{apikey:'%s',Authorization:'Bearer %s'}}).then(function(r){return r.ok?r.json():[]}).then(function(a){var d=a&&a[0]&&a[0].data;if(!d)return;
 if(d.hidden)document.getElementById('hid').hidden=false;
 var pr=document.getElementById('pr');if(d.price){pr.hidden=false;pr.querySelector('i').textContent=d.price;}else pr.hidden=true;

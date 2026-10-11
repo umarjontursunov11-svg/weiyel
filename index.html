@@ -6,6 +6,10 @@
 <title>Weiyel O‘zbekiston</title>
 <meta name="description" content="STANDART VA METROLOGIYA MCHJ — Weiyel’ning O‘zbekistondagi yagona rasmiy dileri. 12 900+ sertifikatlangan standart namunalar (CRM). Официальный дилер Weiyel в Узбекистане: стандартные образцы для лабораторий.">
 <meta name="keywords" content="standart namuna, CRM, Weiyel, reference material, стандартные образцы, ГСО, лаборатория, Toshkent, Узбекистан">
+<!-- Google Analytics 4 -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-3JY7CQC2P0"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-3JY7CQC2P0');
+function track(n,p){try{gtag('event',n,p||{});}catch(e){}}</script>
 <link rel="canonical" href="https://weiyel.uz/">
 <meta property="og:url" content="https://weiyel.uz/">
 <meta name="theme-color" content="#0b1626">
@@ -743,6 +747,7 @@ document.getElementById('form').addEventListener('submit',async e=>{
     if(!r.ok) throw 0;
   }catch(err){ ok.style.cssText='display:block;background:#fdecec;color:#b42318'; ok.textContent=T[lang].f_err; btn.disabled=false; return; }
   btn.disabled=false;
+  track('generate_lead',{lead_source:'contact_form',items_count:PC.picked.size,language:lang,category:lead.category||''});
   ok.style.cssText='display:block'; ok.textContent=T[lang].f_ok; e.target.reset(); PC.picked.clear(); pcRender(); pcCartUpd();
   setTimeout(()=>ok.style.display='none',6000);
 });
@@ -862,7 +867,7 @@ $('pcList').addEventListener('click',e=>{
 function pcToggle(no){
   const row=WY.rows.find(r=>r[0]===no), t=T[lang], ta=document.querySelector('#form textarea'), NL=String.fromCharCode(10);
   if(PC.picked.has(no)){ PC.picked.delete(no); ta.value=ta.value.split(NL).filter(l=>!l.startsWith('• '+no+' ')).join(NL); }
-  else { PC.picked.add(no); if(!ta.value.trim()) ta.value=t.pc_msg; ta.value+=NL+'• '+no+' — '+row[1]+(row[3]?' ('+row[3]+')':''); }
+  else { track('add_to_request',{item_id:no,item_name:row[1],language:lang}); PC.picked.add(no); if(!ta.value.trim()) ta.value=t.pc_msg; ta.value+=NL+'• '+no+' — '+row[1]+(row[3]?' ('+row[3]+')':''); }
   pcRender(); pcCartUpd(); if(PD.no===no) pdRender();
 }
 window.addEventListener('wy-loaded',pcLang);
@@ -913,7 +918,7 @@ function pdOpen(no){
   setTimeout(()=>$('pdX')&&$('pdX').focus(),50);
 }
 function pdClose(){ $('pd').classList.remove('open'); document.body.classList.remove('pd-lock'); PD.no=null; if(PD.back&&PD.back.focus) PD.back.focus(); }
-$('pd').addEventListener('click',e=>{ if(e.target.id==='pd'||e.target.closest('#pdX')) pdClose(); if(e.target.closest('#pdAdd')) pcToggle(PD.no); if(e.target.closest('#pdAsk')){ if(!PC.picked.has(PD.no)) pcToggle(PD.no); pdClose(); $('contact').scrollIntoView({behavior:'smooth'}); } });
+$('pd').addEventListener('click',e=>{ if(e.target.id==='pd'||e.target.closest('#pdX')) pdClose(); if(e.target.closest('#pdAdd')) pcToggle(PD.no); if(e.target.closest('#pdAsk')){ track('request_price',{item_id:PD.no,place:'catalog_dialog',language:lang}); if(!PC.picked.has(PD.no)) pcToggle(PD.no); pdClose(); $('contact').scrollIntoView({behavior:'smooth'}); } });
 addEventListener('keydown',e=>{ if(e.key==='Escape'&&PD.no) pdClose(); });
 function pdRender(){
   if(!PD.no) return;
