@@ -47,6 +47,16 @@
   ],
   "redirects": [
     {
+      "source": "/admin",
+      "destination": "/admin.html",
+      "permanent": true
+    },
+    {
+      "source": "/admin/",
+      "destination": "/admin.html",
+      "permanent": true
+    },
+    {
       "source": "/:path*",
       "has": [
         {
