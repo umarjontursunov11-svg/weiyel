@@ -310,6 +310,7 @@ def page(lang, title, desc, path, alt_path, body, jsonld=None, crumbs=None, extr
   <div><h3>{e(T['catalog'])}</h3><ul>{''.join(f'<li><a href="{url_main(lang, m)}">{e(main_name(m, T))}</a></li>' for m in MAIN if any(main_of(k) == m for k in SUB_ORDER))}</ul>{f'<p style="margin-top:10px">{e(addr)}</p>' if addr else ''}</div>
 </div></footer>
 {'<script src="/assets/p.js" defer></script>' if no else ''}
+<script src="https://sm-agent-production.up.railway.app/widget.js" defer></script>
 </body>
 </html>
 """
